@@ -1,7 +1,6 @@
 from flask import Flask, request, render_template, jsonify
-import pandas as pd
-from datetime import datetime
 import os
+from statistics import mean, stdev
 
 app = Flask(__name__)
 
@@ -85,13 +84,15 @@ def get_students():
         if not students:
             return jsonify({'success': True, 'students': [], 'count': 0}), 200
         
-        df = pd.DataFrame(students)
+        ages = [s['Age'] for s in students]
+        marks = [s['Marks'] for s in students]
+        
         stats = {
             'total': len(students),
-            'avg_age': round(df['Age'].mean(), 2),
-            'avg_marks': round(df['Marks'].mean(), 2),
-            'highest_marks': df['Marks'].max(),
-            'lowest_marks': df['Marks'].min()
+            'avg_age': round(mean(ages), 2),
+            'avg_marks': round(mean(marks), 2),
+            'highest_marks': max(marks),
+            'lowest_marks': min(marks)
         }
         
         return jsonify({
@@ -111,9 +112,13 @@ def download_csv():
         if not students:
             return jsonify({'success': False, 'error': 'No students to download'}), 400
         
-        df = pd.DataFrame(students)
         csv_file = 'student_data.csv'
-        df.to_csv(csv_file, index=False)
+        with open(csv_file, 'w') as f:
+            # Write header
+            f.write('Name,Age,Gender,Student ID,Marks\n')
+            # Write data
+            for student in students:
+                f.write(f"{student['Name']},{student['Age']},{student['Gender']},{student['Student ID']},{student['Marks']}\n")
         
         return jsonify({
             'success': True,
